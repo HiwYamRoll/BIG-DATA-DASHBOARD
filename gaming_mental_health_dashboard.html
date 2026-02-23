@@ -1,0 +1,1020 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gaming & Mental Health Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&display=swap');
+
+  :root {
+    --bg: #05080f;
+    --panel: #0c1222;
+    --panel2: #0f1830;
+    --accent: #00f5c4;
+    --accent2: #ff5fa0;
+    --accent3: #ffd166;
+    --accent4: #7b61ff;
+    --text: #e2e8f7;
+    --muted: #5a6a8a;
+    --border: rgba(0,245,196,0.15);
+    --glow: 0 0 20px rgba(0,245,196,0.3);
+    --red: #ff4d6a;
+    --orange: #ff8c42;
+    --yellow: #ffd166;
+    --green: #06d6a0;
+    --blue: #118ab2;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 15px;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(ellipse at 20% 20%, rgba(0,245,196,0.04) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 80%, rgba(123,97,255,0.05) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .header {
+    position: relative;
+    z-index: 10;
+    padding: 24px 32px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(180deg, rgba(0,245,196,0.05) 0%, transparent 100%);
+  }
+
+  .header-left h1 {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 22px;
+    font-weight: 900;
+    color: var(--accent);
+    text-shadow: 0 0 30px rgba(0,245,196,0.5);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  .header-left p {
+    color: var(--muted);
+    font-size: 13px;
+    margin-top: 4px;
+    letter-spacing: 1px;
+  }
+
+  .record-count {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 13px;
+    color: var(--accent);
+    background: rgba(0,245,196,0.08);
+    border: 1px solid var(--border);
+    padding: 8px 16px;
+    border-radius: 6px;
+  }
+
+  /* Upload zone */
+  .upload-zone {
+    position: relative;
+    z-index: 10;
+    margin: 20px 32px;
+    border: 2px dashed rgba(0,245,196,0.3);
+    border-radius: 12px;
+    padding: 20px 32px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    background: rgba(0,245,196,0.03);
+    cursor: pointer;
+    transition: all 0.3s;
+  }
+
+  .upload-zone:hover, .upload-zone.drag-over {
+    border-color: var(--accent);
+    background: rgba(0,245,196,0.08);
+    box-shadow: var(--glow);
+  }
+
+  .upload-icon {
+    font-size: 32px;
+  }
+
+  .upload-text h3 {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 13px;
+    color: var(--accent);
+    letter-spacing: 1px;
+  }
+
+  .upload-text p {
+    color: var(--muted);
+    font-size: 12px;
+    margin-top: 4px;
+  }
+
+  .upload-btn {
+    margin-left: auto;
+    background: linear-gradient(135deg, var(--accent), #00c9a0);
+    color: #000;
+    border: none;
+    padding: 10px 24px;
+    border-radius: 6px;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    letter-spacing: 1px;
+    transition: all 0.3s;
+  }
+
+  .upload-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(0,245,196,0.4); }
+
+  #fileInput { display: none; }
+
+  /* Filters */
+  .filters-bar {
+    position: relative;
+    z-index: 10;
+    padding: 0 32px 16px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+  }
+
+  .filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .filter-group label {
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    font-family: 'Orbitron', sans-serif;
+  }
+
+  select {
+    background: var(--panel);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 13px;
+    cursor: pointer;
+    min-width: 140px;
+    outline: none;
+    transition: border-color 0.3s;
+  }
+
+  select:focus, select:hover { border-color: var(--accent); }
+
+  .reset-btn {
+    background: transparent;
+    color: var(--accent2);
+    border: 1px solid rgba(255,95,160,0.4);
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 10px;
+    cursor: pointer;
+    letter-spacing: 1px;
+    margin-top: 16px;
+    transition: all 0.3s;
+  }
+
+  .reset-btn:hover { background: rgba(255,95,160,0.1); border-color: var(--accent2); }
+
+  /* KPI cards */
+  .kpi-row {
+    position: relative;
+    z-index: 10;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 16px;
+    padding: 0 32px 24px;
+  }
+
+  .kpi-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px 20px;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.3s, box-shadow 0.3s;
+  }
+
+  .kpi-card:hover { transform: translateY(-3px); box-shadow: 0 8px 30px rgba(0,245,196,0.15); }
+
+  .kpi-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+  }
+
+  .kpi-card.c1::before { background: linear-gradient(90deg, var(--accent), transparent); }
+  .kpi-card.c2::before { background: linear-gradient(90deg, var(--accent2), transparent); }
+  .kpi-card.c3::before { background: linear-gradient(90deg, var(--accent3), transparent); }
+  .kpi-card.c4::before { background: linear-gradient(90deg, var(--accent4), transparent); }
+  .kpi-card.c5::before { background: linear-gradient(90deg, var(--red), transparent); }
+  .kpi-card.c6::before { background: linear-gradient(90deg, var(--green), transparent); }
+
+  .kpi-label {
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    font-family: 'Orbitron', sans-serif;
+    margin-bottom: 8px;
+  }
+
+  .kpi-value {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 26px;
+    font-weight: 900;
+    line-height: 1;
+  }
+
+  .kpi-card.c1 .kpi-value { color: var(--accent); }
+  .kpi-card.c2 .kpi-value { color: var(--accent2); }
+  .kpi-card.c3 .kpi-value { color: var(--accent3); }
+  .kpi-card.c4 .kpi-value { color: var(--accent4); }
+  .kpi-card.c5 .kpi-value { color: var(--red); }
+  .kpi-card.c6 .kpi-value { color: var(--green); }
+
+  .kpi-sub { font-size: 11px; color: var(--muted); margin-top: 6px; }
+
+  /* Charts grid */
+  .charts-grid {
+    position: relative;
+    z-index: 10;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    padding: 0 32px 24px;
+  }
+
+  .chart-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    position: relative;
+    transition: box-shadow 0.3s;
+  }
+
+  .chart-card:hover { box-shadow: 0 4px 30px rgba(0,245,196,0.1); }
+
+  .chart-card.wide { grid-column: 1 / -1; }
+
+  .chart-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .chart-title::before {
+    content: '';
+    width: 4px; height: 14px;
+    background: var(--accent);
+    border-radius: 2px;
+    box-shadow: 0 0 8px rgba(0,245,196,0.6);
+  }
+
+  .chart-wrap {
+    position: relative;
+    height: 280px;
+  }
+
+  .chart-wrap.tall { height: 320px; }
+
+  /* Data table */
+  .table-section {
+    position: relative;
+    z-index: 10;
+    padding: 0 32px 40px;
+  }
+
+  .table-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+
+  .table-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 12px;
+    color: var(--accent);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+  }
+
+  .table-controls { display: flex; gap: 10px; align-items: center; }
+
+  .search-input {
+    background: var(--panel);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 14px;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 13px;
+    outline: none;
+    width: 220px;
+    transition: border-color 0.3s;
+  }
+
+  .search-input::placeholder { color: var(--muted); }
+  .search-input:focus { border-color: var(--accent); }
+
+  .table-wrap {
+    overflow-x: auto;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    max-height: 420px;
+    overflow-y: auto;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+
+  thead {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+  }
+
+  th {
+    background: var(--panel2);
+    padding: 11px 14px;
+    text-align: left;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 9px;
+    color: var(--accent);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+    cursor: pointer;
+    user-select: none;
+    transition: color 0.2s;
+  }
+
+  th:hover { color: var(--accent2); }
+
+  td {
+    padding: 9px 14px;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    color: var(--text);
+    white-space: nowrap;
+  }
+
+  tr:hover td { background: rgba(0,245,196,0.04); }
+
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: 700;
+    font-family: 'Orbitron', sans-serif;
+    letter-spacing: 0.5px;
+  }
+
+  .badge-low { background: rgba(6,214,160,0.15); color: var(--green); border: 1px solid rgba(6,214,160,0.3); }
+  .badge-moderate { background: rgba(255,209,102,0.15); color: var(--yellow); border: 1px solid rgba(255,209,102,0.3); }
+  .badge-high { background: rgba(255,140,66,0.15); color: var(--orange); border: 1px solid rgba(255,140,66,0.3); }
+  .badge-severe { background: rgba(255,77,106,0.15); color: var(--red); border: 1px solid rgba(255,77,106,0.3); }
+
+  .pagination {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 14px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  .page-btn {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 6px 14px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 10px;
+    transition: all 0.2s;
+  }
+
+  .page-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+  .page-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: rgba(0,245,196,0.3); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+  .grid-3 { grid-template-columns: 1fr 1fr 1fr !important; }
+
+  @media (max-width: 900px) {
+    .charts-grid { grid-template-columns: 1fr; }
+    .chart-card.wide { grid-column: 1; }
+    .header, .upload-zone, .filters-bar, .kpi-row, .charts-grid, .table-section { padding-left: 16px; padding-right: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <h1>⚡ Gaming &amp; Mental Health</h1>
+    <p>INTERACTIVE ANALYTICS DASHBOARD · DATA INTELLIGENCE PLATFORM</p>
+  </div>
+  <div class="record-count" id="recordCount">LOADING...</div>
+</div>
+
+<!-- Upload Zone -->
+<div class="upload-zone" id="uploadZone">
+  <span class="upload-icon">📂</span>
+  <div class="upload-text">
+    <h3>อัปโหลดไฟล์ CSV</h3>
+    <p>ลากวางไฟล์ที่นี่ หรือกดปุ่มเพื่อเลือกไฟล์ · รองรับเฉพาะไฟล์ .csv</p>
+  </div>
+  <button class="upload-btn" onclick="document.getElementById('fileInput').click()">📤 UPLOAD CSV</button>
+  <input type="file" id="fileInput" accept=".csv">
+</div>
+
+<!-- Filters -->
+<div class="filters-bar">
+  <div class="filter-group">
+    <label>ความเสี่ยงการติด</label>
+    <select id="filterRisk">
+      <option value="">ทั้งหมด</option>
+      <option>Low</option><option>Moderate</option><option>High</option><option>Severe</option>
+    </select>
+  </div>
+  <div class="filter-group">
+    <label>เพศ</label>
+    <select id="filterGender">
+      <option value="">ทั้งหมด</option>
+      <option>Male</option><option>Female</option><option>Other</option>
+    </select>
+  </div>
+  <div class="filter-group">
+    <label>ประเภทเกม</label>
+    <select id="filterGenre">
+      <option value="">ทั้งหมด</option>
+    </select>
+  </div>
+  <div class="filter-group">
+    <label>แพลตฟอร์ม</label>
+    <select id="filterPlatform">
+      <option value="">ทั้งหมด</option>
+    </select>
+  </div>
+  <div class="filter-group">
+    <label>ช่วงอายุ</label>
+    <select id="filterAge">
+      <option value="">ทั้งหมด</option>
+      <option value="teen">13-17 ปี</option>
+      <option value="young">18-24 ปี</option>
+      <option value="adult">25-35 ปี</option>
+    </select>
+  </div>
+  <button class="reset-btn" onclick="resetFilters()">↺ รีเซ็ตตัวกรอง</button>
+</div>
+
+<!-- KPI Row -->
+<div class="kpi-row">
+  <div class="kpi-card c1">
+    <div class="kpi-label">จำนวนผู้ตอบแบบสอบถาม</div>
+    <div class="kpi-value" id="kpi-total">—</div>
+    <div class="kpi-sub">รายการในชุดข้อมูล</div>
+  </div>
+  <div class="kpi-card c2">
+    <div class="kpi-label">เล่นเฉลี่ย/วัน</div>
+    <div class="kpi-value" id="kpi-hours">—</div>
+    <div class="kpi-sub">ชั่วโมงต่อวัน</div>
+  </div>
+  <div class="kpi-card c3">
+    <div class="kpi-label">อายุเฉลี่ย</div>
+    <div class="kpi-value" id="kpi-age">—</div>
+    <div class="kpi-sub">ปี</div>
+  </div>
+  <div class="kpi-card c4">
+    <div class="kpi-label">นอนหลับเฉลี่ย</div>
+    <div class="kpi-value" id="kpi-sleep">—</div>
+    <div class="kpi-sub">ชั่วโมง/คืน</div>
+  </div>
+  <div class="kpi-card c5">
+    <div class="kpi-label">ความเสี่ยงรุนแรง</div>
+    <div class="kpi-value" id="kpi-severe">—</div>
+    <div class="kpi-sub">% ของกลุ่มตัวอย่าง</div>
+  </div>
+  <div class="kpi-card c6">
+    <div class="kpi-label">ค่าใช้จ่ายเฉลี่ย/เดือน</div>
+    <div class="kpi-value" id="kpi-spend">—</div>
+    <div class="kpi-sub">USD</div>
+  </div>
+</div>
+
+<!-- Charts -->
+<div class="charts-grid">
+  <div class="chart-card">
+    <div class="chart-title">ระดับความเสี่ยงการติดเกม</div>
+    <div class="chart-wrap"><canvas id="chartRisk"></canvas></div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-title">สัดส่วนเพศ</div>
+    <div class="chart-wrap"><canvas id="chartGender"></canvas></div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-title">ชั่วโมงเล่นต่อวัน (ตามประเภทเกม)</div>
+    <div class="chart-wrap"><canvas id="chartGenreHours"></canvas></div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-title">คุณภาพการนอนหลับ</div>
+    <div class="chart-wrap"><canvas id="chartSleep"></canvas></div>
+  </div>
+  <div class="chart-card wide">
+    <div class="chart-title">ความเสี่ยงการติดเกม แยกตามประเภทเกม</div>
+    <div class="chart-wrap tall"><canvas id="chartRiskByGenre"></canvas></div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-title">สภาวะอารมณ์</div>
+    <div class="chart-wrap"><canvas id="chartMood"></canvas></div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-title">แพลตฟอร์มที่ใช้เล่น</div>
+    <div class="chart-wrap"><canvas id="chartPlatform"></canvas></div>
+  </div>
+</div>
+
+<!-- Data Table -->
+<div class="table-section">
+  <div class="table-header">
+    <div class="table-title">📊 ข้อมูลรายละเอียดทั้งหมด</div>
+    <div class="table-controls">
+      <input type="text" class="search-input" id="searchInput" placeholder="🔍 ค้นหา...">
+      <select id="pageSizeSelect" style="min-width:80px">
+        <option value="20">20 แถว</option>
+        <option value="50">50 แถว</option>
+        <option value="100">100 แถว</option>
+      </select>
+    </div>
+  </div>
+  <div class="table-wrap">
+    <table id="dataTable">
+      <thead id="tableHead"></thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+  </div>
+  <div class="pagination">
+    <span id="pageInfo">—</span>
+    <button class="page-btn" id="prevBtn" onclick="changePage(-1)">◀ ก่อนหน้า</button>
+    <button class="page-btn" id="nextBtn" onclick="changePage(1)">ถัดไป ▶</button>
+  </div>
+</div>
+
+<script>
+let rawData = [];
+let filteredData = [];
+let currentPage = 1;
+let pageSize = 20;
+let charts = {};
+let sortCol = null, sortDir = 1;
+
+const RISK_COLORS = { Low: '#06d6a0', Moderate: '#ffd166', High: '#ff8c42', Severe: '#ff4d6a' };
+const CHART_PALETTE = ['#00f5c4','#ff5fa0','#ffd166','#7b61ff','#118ab2','#ff8c42','#06d6a0','#ef476f','#26547c','#a8dadc'];
+
+// Parse CSV
+function parseCSV(text) {
+  const lines = text.trim().split('\n');
+  const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
+  return lines.slice(1).map(line => {
+    const vals = [];
+    let cur = '', inQ = false;
+    for (let c of line) {
+      if (c === '"') inQ = !inQ;
+      else if (c === ',' && !inQ) { vals.push(cur.trim()); cur = ''; }
+      else cur += c;
+    }
+    vals.push(cur.trim());
+    const obj = {};
+    headers.forEach((h, i) => obj[h] = vals[i] || '');
+    return obj;
+  }).filter(r => r[headers[0]]);
+}
+
+function avg(arr, key) {
+  const vals = arr.map(r => parseFloat(r[key])).filter(v => !isNaN(v));
+  return vals.length ? (vals.reduce((a, b) => a + b, 0) / vals.length) : 0;
+}
+
+function countBy(arr, key) {
+  const out = {};
+  arr.forEach(r => { const v = r[key] || 'N/A'; out[v] = (out[v] || 0) + 1; });
+  return out;
+}
+
+function getFiltered() {
+  const risk = document.getElementById('filterRisk').value;
+  const gender = document.getElementById('filterGender').value;
+  const genre = document.getElementById('filterGenre').value;
+  const platform = document.getElementById('filterPlatform').value;
+  const age = document.getElementById('filterAge').value;
+  const search = document.getElementById('searchInput').value.toLowerCase();
+
+  return rawData.filter(r => {
+    if (risk && r.gaming_addiction_risk_level !== risk) return false;
+    if (gender && r.gender !== gender) return false;
+    if (genre && r.game_genre !== genre) return false;
+    if (platform && r.gaming_platform !== platform) return false;
+    if (age) {
+      const a = parseInt(r.age);
+      if (age === 'teen' && (a < 13 || a > 17)) return false;
+      if (age === 'young' && (a < 18 || a > 24)) return false;
+      if (age === 'adult' && (a < 25 || a > 35)) return false;
+    }
+    if (search) {
+      const row = Object.values(r).join(' ').toLowerCase();
+      if (!row.includes(search)) return false;
+    }
+    return true;
+  });
+}
+
+function populateFilters() {
+  const genres = [...new Set(rawData.map(r => r.game_genre).filter(Boolean))].sort();
+  const platforms = [...new Set(rawData.map(r => r.gaming_platform).filter(Boolean))].sort();
+  const genreSel = document.getElementById('filterGenre');
+  const platSel = document.getElementById('filterPlatform');
+  genres.forEach(g => { const o = document.createElement('option'); o.value = g; o.textContent = g; genreSel.appendChild(o); });
+  platforms.forEach(p => { const o = document.createElement('option'); o.value = p; o.textContent = p; platSel.appendChild(o); });
+}
+
+function updateKPIs(data) {
+  document.getElementById('kpi-total').textContent = data.length.toLocaleString();
+  document.getElementById('kpi-hours').textContent = avg(data, 'daily_gaming_hours').toFixed(1);
+  document.getElementById('kpi-age').textContent = avg(data, 'age').toFixed(1);
+  document.getElementById('kpi-sleep').textContent = avg(data, 'sleep_hours').toFixed(1);
+  const severeCount = data.filter(r => r.gaming_addiction_risk_level === 'Severe').length;
+  document.getElementById('kpi-severe').textContent = data.length ? ((severeCount / data.length) * 100).toFixed(1) + '%' : '0%';
+  document.getElementById('kpi-spend').textContent = '$' + avg(data, 'monthly_game_spending_usd').toFixed(0);
+  document.getElementById('recordCount').textContent = data.length.toLocaleString() + ' RECORDS';
+}
+
+function destroyChart(id) { if (charts[id]) { charts[id].destroy(); delete charts[id]; } }
+
+function makeChart(id, type, labels, datasets, opts = {}) {
+  destroyChart(id);
+  const ctx = document.getElementById(id).getContext('2d');
+  charts[id] = new Chart(ctx, {
+    type,
+    data: { labels, datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { labels: { color: '#94a3b8', font: { family: 'Rajdhani', size: 12 }, boxWidth: 12 } },
+        tooltip: {
+          backgroundColor: '#0c1222', borderColor: 'rgba(0,245,196,0.3)', borderWidth: 1,
+          titleColor: '#00f5c4', bodyColor: '#e2e8f7',
+          titleFont: { family: 'Orbitron', size: 11 }, bodyFont: { family: 'Rajdhani', size: 13 }
+        },
+        datalabels: opts.datalabels || undefined,
+      },
+      scales: opts.scales || undefined,
+      ...opts.extra
+    }
+  });
+}
+
+function updateCharts(data) {
+  const scaleBase = {
+    grid: { color: 'rgba(255,255,255,0.06)' },
+    ticks: { color: '#5a6a8a', font: { family: 'Rajdhani', size: 11 } },
+  };
+
+  // Risk chart
+  const riskCounts = countBy(data, 'gaming_addiction_risk_level');
+  const riskOrder = ['Low', 'Moderate', 'High', 'Severe'];
+  const riskLabels = riskOrder.filter(k => riskCounts[k]);
+  const riskVals = riskLabels.map(k => riskCounts[k] || 0);
+  makeChart('chartRisk', 'bar', riskLabels,
+    [{ label: 'จำนวนคน', data: riskVals, backgroundColor: riskLabels.map(l => RISK_COLORS[l] + 'cc'), borderColor: riskLabels.map(l => RISK_COLORS[l]), borderWidth: 2, borderRadius: 6 }],
+    {
+      scales: { x: { ...scaleBase, border: { display: false } }, y: { ...scaleBase, border: { display: false }, beginAtZero: true } },
+      extra: { plugins: { legend: { display: false } } }
+    }
+  );
+  // add data labels manually via afterDraw
+  Chart.register({
+    id: 'riskDL', afterDraw(chart) {
+      if (chart.canvas.id !== 'chartRisk') return;
+      const ctx = chart.ctx;
+      chart.data.datasets.forEach((ds, di) => {
+        chart.getDatasetMeta(di).data.forEach((bar, i) => {
+          const val = ds.data[i];
+          if (val == null) return;
+          ctx.fillStyle = '#fff';
+          ctx.font = 'bold 12px Rajdhani';
+          ctx.textAlign = 'center';
+          ctx.fillText(val, bar.x, bar.y - 6);
+        });
+      });
+    }
+  });
+
+  // Gender pie
+  const genderCounts = countBy(data, 'gender');
+  makeChart('chartGender', 'doughnut', Object.keys(genderCounts),
+    [{ data: Object.values(genderCounts), backgroundColor: ['#7b61ff99','#ff5fa099','#ffd16699'], borderColor: ['#7b61ff','#ff5fa0','#ffd166'], borderWidth: 2 }],
+    { extra: { plugins: { legend: { position: 'right' } }, cutout: '55%' } }
+  );
+  // Gender datalabels via afterDraw
+  Chart.register({
+    id: 'genderDL', afterDraw(chart) {
+      if (chart.canvas.id !== 'chartGender') return;
+      const total = chart.data.datasets[0].data.reduce((a, b) => a + b, 0);
+      const ctx = chart.ctx;
+      chart.data.datasets[0].data.forEach((val, i) => {
+        const meta = chart.getDatasetMeta(0);
+        if (!meta.data[i]) return;
+        const arc = meta.data[i];
+        const mid = (arc.startAngle + arc.endAngle) / 2;
+        const r = (arc.innerRadius + arc.outerRadius) / 2;
+        const x = arc.x + Math.cos(mid) * r;
+        const y = arc.y + Math.sin(mid) * r;
+        if (val / total < 0.04) return;
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 11px Rajdhani';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(((val / total) * 100).toFixed(1) + '%', x, y);
+      });
+    }
+  });
+
+  // Genre hours
+  const genres = [...new Set(data.map(r => r.game_genre).filter(Boolean))].sort();
+  const genreHours = genres.map(g => avg(data.filter(r => r.game_genre === g), 'daily_gaming_hours'));
+  makeChart('chartGenreHours', 'bar', genres,
+    [{ label: 'ชั่วโมง/วัน', data: genreHours, backgroundColor: CHART_PALETTE.map(c => c + 'aa'), borderColor: CHART_PALETTE, borderWidth: 2, borderRadius: 6 }],
+    {
+      scales: {
+        x: { ...scaleBase, border: { display: false }, ticks: { ...scaleBase.ticks, maxRotation: 30 } },
+        y: { ...scaleBase, border: { display: false }, beginAtZero: true }
+      },
+      extra: { plugins: { legend: { display: false } } }
+    }
+  );
+  Chart.register({
+    id: 'genreHoursDL', afterDraw(chart) {
+      if (chart.canvas.id !== 'chartGenreHours') return;
+      const ctx = chart.ctx;
+      chart.data.datasets.forEach((ds, di) => {
+        chart.getDatasetMeta(di).data.forEach((bar, i) => {
+          ctx.fillStyle = '#fff';
+          ctx.font = 'bold 10px Rajdhani';
+          ctx.textAlign = 'center';
+          ctx.fillText(ds.data[i].toFixed(1), bar.x, bar.y - 5);
+        });
+      });
+    }
+  });
+
+  // Sleep quality
+  const sleepCounts = countBy(data, 'sleep_quality');
+  makeChart('chartSleep', 'doughnut', Object.keys(sleepCounts),
+    [{ data: Object.values(sleepCounts), backgroundColor: CHART_PALETTE.map(c => c + '99'), borderColor: CHART_PALETTE, borderWidth: 2 }],
+    { extra: { plugins: { legend: { position: 'right' } }, cutout: '40%' } }
+  );
+
+  // Risk by genre stacked
+  const riskValsArr = riskOrder.map(risk => genres.map(g => data.filter(r => r.game_genre === g && r.gaming_addiction_risk_level === risk).length));
+  makeChart('chartRiskByGenre', 'bar', genres,
+    riskOrder.map((r, i) => ({ label: r, data: riskValsArr[i], backgroundColor: RISK_COLORS[r] + 'bb', borderColor: RISK_COLORS[r], borderWidth: 1, borderRadius: 3 })),
+    {
+      scales: {
+        x: { ...scaleBase, border: { display: false }, stacked: true, ticks: { ...scaleBase.ticks, maxRotation: 25 } },
+        y: { ...scaleBase, border: { display: false }, stacked: true, beginAtZero: true }
+      },
+      extra: {}
+    }
+  );
+
+  // Mood
+  const moodCounts = countBy(data, 'mood_state');
+  const moodLabels = Object.keys(moodCounts).sort((a, b) => moodCounts[b] - moodCounts[a]).slice(0, 10);
+  makeChart('chartMood', 'bar', moodLabels,
+    [{ label: 'จำนวนคน', data: moodLabels.map(k => moodCounts[k]), backgroundColor: CHART_PALETTE.map(c => c + 'aa'), borderColor: CHART_PALETTE, borderWidth: 2, borderRadius: 6 }],
+    {
+      scales: { x: { ...scaleBase, border: { display: false } }, y: { ...scaleBase, border: { display: false }, beginAtZero: true } },
+      extra: { indexAxis: 'y', plugins: { legend: { display: false } } }
+    }
+  );
+
+  // Platform
+  const platCounts = countBy(data, 'gaming_platform');
+  makeChart('chartPlatform', 'pie', Object.keys(platCounts),
+    [{ data: Object.values(platCounts), backgroundColor: CHART_PALETTE.map(c => c + '99'), borderColor: CHART_PALETTE, borderWidth: 2 }],
+    { extra: { plugins: { legend: { position: 'right' } } } }
+  );
+}
+
+// Table
+const COL_LABELS = {
+  record_id:'ID', age:'อายุ', gender:'เพศ', daily_gaming_hours:'ชม./วัน', game_genre:'ประเภทเกม',
+  primary_game:'เกมหลัก', gaming_platform:'แพลตฟอร์ม', sleep_hours:'ชม.นอน', sleep_quality:'คุณภาพการนอน',
+  academic_work_performance:'ผลการเรียน/งาน', mood_state:'อารมณ์', gaming_addiction_risk_level:'ระดับความเสี่ยง',
+  monthly_game_spending_usd:'ค่าใช้จ่าย ($)', years_gaming:'ปีที่เล่น', social_isolation_score:'โดดเดี่ยว'
+};
+const SHOW_COLS = Object.keys(COL_LABELS);
+
+function buildTableHead() {
+  const thead = document.getElementById('tableHead');
+  thead.innerHTML = '';
+  const tr = document.createElement('tr');
+  SHOW_COLS.forEach(col => {
+    const th = document.createElement('th');
+    th.textContent = COL_LABELS[col];
+    th.title = 'คลิกเพื่อเรียงลำดับ';
+    th.onclick = () => sortTable(col);
+    tr.appendChild(th);
+  });
+  thead.appendChild(tr);
+}
+
+function sortTable(col) {
+  if (sortCol === col) sortDir *= -1; else { sortCol = col; sortDir = 1; }
+  filteredData.sort((a, b) => {
+    const va = isNaN(a[col]) ? a[col] : parseFloat(a[col]);
+    const vb = isNaN(b[col]) ? b[col] : parseFloat(b[col]);
+    return va < vb ? -sortDir : va > vb ? sortDir : 0;
+  });
+  currentPage = 1;
+  renderTable();
+}
+
+function riskBadge(val) {
+  const cls = { Low: 'badge-low', Moderate: 'badge-moderate', High: 'badge-high', Severe: 'badge-severe' }[val] || '';
+  return `<span class="badge ${cls}">${val}</span>`;
+}
+
+function renderTable() {
+  const tbody = document.getElementById('tableBody');
+  tbody.innerHTML = '';
+  const start = (currentPage - 1) * pageSize;
+  const page = filteredData.slice(start, start + pageSize);
+  page.forEach(row => {
+    const tr = document.createElement('tr');
+    SHOW_COLS.forEach(col => {
+      const td = document.createElement('td');
+      if (col === 'gaming_addiction_risk_level') td.innerHTML = riskBadge(row[col]);
+      else td.textContent = row[col] ?? '—';
+      tr.appendChild(td);
+    });
+    tbody.appendChild(tr);
+  });
+  const totalPages = Math.ceil(filteredData.length / pageSize);
+  document.getElementById('pageInfo').textContent = `หน้า ${currentPage} / ${totalPages} (${filteredData.length.toLocaleString()} รายการ)`;
+  document.getElementById('prevBtn').disabled = currentPage <= 1;
+  document.getElementById('nextBtn').disabled = currentPage >= totalPages;
+}
+
+function changePage(dir) { currentPage += dir; renderTable(); }
+
+function update() {
+  filteredData = getFiltered();
+  if (sortCol) {
+    filteredData.sort((a, b) => {
+      const va = isNaN(a[sortCol]) ? a[sortCol] : parseFloat(a[sortCol]);
+      const vb = isNaN(b[sortCol]) ? b[sortCol] : parseFloat(b[sortCol]);
+      return va < vb ? -sortDir : va > vb ? sortDir : 0;
+    });
+  }
+  currentPage = 1;
+  updateKPIs(filteredData);
+  updateCharts(filteredData);
+  renderTable();
+}
+
+function resetFilters() {
+  ['filterRisk','filterGender','filterGenre','filterPlatform','filterAge'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('searchInput').value = '';
+  update();
+}
+
+function loadData(data) {
+  rawData = data;
+  populateFilters();
+  buildTableHead();
+  update();
+}
+
+// File upload
+document.getElementById('fileInput').addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    rawData = [];
+    document.getElementById('filterGenre').innerHTML = '<option value="">ทั้งหมด</option>';
+    document.getElementById('filterPlatform').innerHTML = '<option value="">ทั้งหมด</option>';
+    loadData(parseCSV(ev.target.result));
+  };
+  reader.readAsText(file);
+});
+
+const uploadZone = document.getElementById('uploadZone');
+uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('drag-over'); });
+uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag-over'));
+uploadZone.addEventListener('drop', e => {
+  e.preventDefault(); uploadZone.classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file && file.name.endsWith('.csv')) {
+    const reader = new FileReader();
+    reader.onload = ev => {
+      rawData = [];
+      document.getElementById('filterGenre').innerHTML = '<option value="">ทั้งหมด</option>';
+      document.getElementById('filterPlatform').innerHTML = '<option value="">ทั้งหมด</option>';
+      loadData(parseCSV(ev.target.result));
+    };
+    reader.readAsText(file);
+  }
+});
+
+document.getElementById('pageSizeSelect').addEventListener('change', e => { pageSize = parseInt(e.target.value); currentPage = 1; renderTable(); });
+document.getElementById('searchInput').addEventListener('input', () => { currentPage = 1; update(); });
+['filterRisk','filterGender','filterGenre','filterPlatform','filterAge'].forEach(id => document.getElementById(id).addEventListener('change', () => { currentPage = 1; update(); }));
+
+// Load embedded CSV data
+const EMBEDDED_CSV = `record_id,age,gender,daily_gaming_hours,game_genre,primary_game,gaming_platform,sleep_hours,sleep_quality,sleep_disruption_frequency,academic_work_performance,grades_gpa,work_productivity_score,mood_state,mood_swing_frequency,withdrawal_symptoms,loss_of_other_interests,continued_despite_problems,eye_strain,back_neck_pain,weight_change_kg,exercise_hours_weekly,social_isolation_score,face_to_face_social_hours_weekly,monthly_game_spending_usd,years_gaming,gaming_addiction_risk_level
+GD0001,17,Male,11.1,Mobile Games,Clash of Clans,PC,3.7,Very Poor,Sometimes,Below Average,1.25,,Anxious,Never,TRUE,FALSE,TRUE,TRUE,FALSE,6.8,3.7,7,1.3,383.7,3,Severe
+GD0002,21,Male,3,MOBA,Dota 2,PC,7.2,Fair,Rarely,Good,3.75,2,Irritable,Often,FALSE,FALSE,FALSE,FALSE,FALSE,0.4,8.5,2,10.7,46.64,1,Low
+GD0003,23,Male,7.6,FPS,CS:GO,Multi-platform,4.4,Fair,Often,Poor,,9,Irritable,Rarely,TRUE,TRUE,TRUE,FALSE,TRUE,1.8,7.1,5,3.2,100.81,6,Severe
+GD0004,20,Female,7.2,RPG,Skyrim,Multi-platform,5.1,Fair,Often,Poor,1.62,2,Withdrawn,Daily,TRUE,TRUE,FALSE,TRUE,TRUE,0.2,5.2,4,9.1,51.6,7,High
+GD0005,18,Male,6.8,Battle Royale,Apex Legends,PC,3.4,Poor,Never,Average,2.44,,Angry,Daily,TRUE,FALSE,FALSE,FALSE,FALSE,0.5,6.1,4,4.5,32.57,1,Moderate
+GD0006,21,Male,2.1,Mobile Games,Clash of Clans,PC,7.5,Fair,Rarely,Good,3.81,4,Normal,Never,FALSE,FALSE,FALSE,FALSE,FALSE,0.2,10.8,1,9.6,8.63,4,Low
+GD0007,21,Male,2.7,FPS,Call of Duty,Multi-platform,7.2,Very Poor,Often,Below Average,1.82,6,Euphoric,Rarely,FALSE,FALSE,FALSE,FALSE,FALSE,0.8,10,2,10.1,35.25,3,Low
+GD0008,28,Female,10.3,Mobile Games,Clash of Clans,Console,5.2,Fair,Sometimes,Poor,,1,Anxious,Rarely,TRUE,TRUE,TRUE,TRUE,TRUE,2.4,5.6,6,0.2,299.28,13,Severe
+GD0009,18,Male,1.4,Mobile Games,Genshin Impact,PC,8.9,Poor,Always,Good,2.43,,Euphoric,Daily,FALSE,FALSE,FALSE,FALSE,FALSE,0.1,10.1,1,12.9,49.4,6,Low
+GD0010,18,Male,7.6,MMO,Final Fantasy XIV,Multi-platform,3.5,Insomnia,Often,Average,1.13,,Anxious,Never,TRUE,TRUE,TRUE,TRUE,FALSE,3.3,4.5,6,4.6,135.2,6,Severe`;
+
+// Load with full CSV (use fetch-style approach for large data - embed first 10 rows and note user can upload full file)
+// Actually load the full data by reading from a pre-parsed approach
+(async function init() {
+  // We'll parse the embedded minimal data first, then user can upload full CSV
+  const initialData = parseCSV(EMBEDDED_CSV);
+  // Show message about uploading full file
+  document.getElementById('recordCount').textContent = 'UPLOAD CSV TO START';
+  rawData = [];
+  populateFilters();
+  buildTableHead();
+  // Auto-load the uploaded file if available via fetch
+  try {
+    const resp = await fetch('Gaming_and_Mental_Health.csv');
+    if (resp.ok) {
+      const text = await resp.text();
+      loadData(parseCSV(text));
+    } else {
+      loadData(initialData);
+    }
+  } catch(e) {
+    loadData(initialData);
+  }
+})();
+</script>
+</body>
+</html>
